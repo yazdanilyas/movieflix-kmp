@@ -1,10 +1,10 @@
-package com.movieflix.app.models.playing
+package com.yi.movieflix.app.models.playing
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class NowPlayingResult(
+data class MovieDetail(
     val adult: Boolean,
     @SerialName("backdrop_path")
     val backdropPath: String? = null,

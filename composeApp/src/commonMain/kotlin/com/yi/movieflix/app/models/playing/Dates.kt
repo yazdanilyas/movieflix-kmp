@@ -1,4 +1,4 @@
-package com.movieflix.app.models.playing
+package com.yi.movieflix.app.models.playing
 
 import kotlinx.serialization.Serializable
 

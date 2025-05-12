@@ -4,14 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.movieflix.app.data.remote.MovieClient
 import com.movieflix.app.data.remote.createHttpClient
-import com.movieflix.app.navigation.AppNavigationHost
-import com.yi.movieflix.app.ui.Splash
+import com.yi.movieflix.app.data.remote.MovieClient
+import com.yi.movieflix.app.navigation.AppNavigationHost
+import com.yi.movieflix.app.ui.main.MainScreen
 import io.ktor.client.engine.okhttp.OkHttp
 
 class MainActivity : ComponentActivity() {
@@ -28,13 +27,7 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    Splash(null)
+//    Splash(null)
     val scope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-//        scope.launch(Dispatchers.IO) {
-        val response = MovieClient(createHttpClient(OkHttp.create())).getMovies()
-//        }
-
-    }
-//    MainScreen(null, null)
+    MainScreen(null, null)
 }

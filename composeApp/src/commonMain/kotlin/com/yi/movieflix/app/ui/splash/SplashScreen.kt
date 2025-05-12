@@ -1,4 +1,4 @@
-package com.yi.movieflix.app.ui
+package com.yi.movieflix.app.ui.splash
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

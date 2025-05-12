@@ -2,6 +2,7 @@ package com.yi.movieflix.app.ui.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,8 +16,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Card
+import androidx.compose.material.Icon
+import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -31,15 +39,24 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.movieflix.app.data.remote.MovieClient
-import com.movieflix.app.models.playing.NowPlaying
-import com.movieflix.app.models.playing.NowPlayingResult
+import com.movieflix.app.navigation.Routes
+import com.yi.movieflix.app.data.remote.MovieClient
+import com.yi.movieflix.app.models.playing.MovieDetail
+import com.yi.movieflix.app.models.playing.MoviesResult
+import com.yi.movieflix.app.ui.favorites.FavoritesScreen
 import io.ktor.client.call.body
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import movieflix_kmp.composeapp.generated.resources.Res
 import movieflix_kmp.composeapp.generated.resources.app_icon
 import org.jetbrains.compose.resources.painterResource
@@ -53,17 +70,101 @@ fun previewMainScreen() {
 }
 
 @Composable
-fun MainScreen(navController: NavController?, client: MovieClient?) {
+fun MainScreen(mainNavController: NavController?, client: MovieClient?) {
+    val navController = rememberNavController()
+    Scaffold(
+        topBar = {},
+        bottomBar = {
+            BottomBarNavigation(navController)
+        },
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = Routes.MAIN_SCREEN.name,
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable(Routes.MAIN_SCREEN.name) {
+                MainScreenContent(mainNavController, client)
+            }
+            composable(Routes.FAVORITES_SCREEN.name) {
+                FavoritesScreen(mainNavController)
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomBarNavigation(navController: NavHostController) {
+    val homeSelection = remember { mutableStateOf(true) }
+    val favSelection = remember { mutableStateOf(false) }
+    BottomNavigation(backgroundColor = Color.LightGray) {
+        BottomNavigationItem(
+            onClick = {
+                favSelection.value = false
+                homeSelection.value = true
+                navController.navigate(Routes.MAIN_SCREEN.name) {
+                    popUpTo(Routes.MAIN_SCREEN.name) { inclusive = true }
+                }
+            },
+            icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Home") },
+            label = { Text("Home") },
+            selected = homeSelection.value,
+            selectedContentColor = Color.Red,
+            unselectedContentColor = Color.DarkGray
+        )
+
+        BottomNavigationItem(
+            onClick = {
+                favSelection.value = true
+                homeSelection.value = false
+                navController.navigate(Routes.FAVORITES_SCREEN.name) {
+                    popUpTo(Routes.FAVORITES_SCREEN.name) { inclusive = true }
+                }
+            },
+            icon = { Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorites") },
+            label = { Text("Favorites") },
+            selected = favSelection.value,
+            selectedContentColor = Color.Red,
+            unselectedContentColor = Color.DarkGray
+        )
+    }
+}
+
+@Composable
+fun MainScreenContent(navController: NavController?, client: MovieClient?) {
     val scope = rememberCoroutineScope()
-    val movieList = remember { mutableStateOf<List<NowPlayingResult>>(emptyList()) }
+    val nowPlayingMovieList = remember { mutableStateOf<List<MovieDetail>>(emptyList()) }
+    val topRatedMovieList = remember { mutableStateOf<List<MovieDetail>>(emptyList()) }
+    val upComingMovieList = remember { mutableStateOf<List<MovieDetail>>(emptyList()) }
+    val popularMovieList = remember { mutableStateOf<List<MovieDetail>>(emptyList()) }
 
     // Fetching movies in a coroutine
     LaunchedEffect(Unit) {
-        scope.launch {
-            val result = client?.getMovies()
-            val res = result?.body() as NowPlaying
-            movieList.value = res.results  // Set the movie list to be displayed
-            android.util.Log.d("RESPONSE", "MainScreen: ${res}")
+        withContext(Dispatchers.IO) {
+            val nowPlayingDeferred = async {
+                val result = client?.getMovies("now_playing")
+                val res = result?.body() as MoviesResult
+                nowPlayingMovieList.value = res.results
+            }
+            nowPlayingDeferred.await()
+            val topRatedDeferred = async {
+                val result = client?.getMovies("top_rated")
+                val res = result?.body() as MoviesResult
+                topRatedMovieList.value = res.results
+            }
+            topRatedDeferred.await()
+            val upcomingDeferred = async {
+                val result = client?.getMovies("upcoming")
+                val res = result?.body() as MoviesResult
+                upComingMovieList.value = res.results
+            }
+            upcomingDeferred.await()
+            val popularDeferred = async {
+                val result = client?.getMovies("popular")
+                val res = result?.body() as MoviesResult
+                popularMovieList.value = res.results
+            }
+            popularDeferred.await()
         }
     }
 
@@ -84,55 +185,19 @@ fun MainScreen(navController: NavController?, client: MovieClient?) {
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(movieList.value) { movie ->
-
-                android.util.Log.d("RESPONSE2", "MainScreen: ${movie.title}")
+            items(nowPlayingMovieList.value.take(5)) { movie ->
                 MovieItem(
                     movie,
                     Modifier
                         .size(150.dp, 200.dp)
-                        /*  .padding(all = 3.dp)*/
                         .background(color = Color.White, RoundedCornerShape(15.dp))
                 )
             }
-        }
-        Text(
-            "Popular",
-            Modifier.padding(start = 15.dp, top = 10.dp),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black
-        )
-        LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(10) {
-                MovieItem(
-                    null,
+            item {
+                SeeMoreItem(
                     Modifier
                         .size(150.dp, 200.dp)
-                        .background(color = Color.White, RoundedCornerShape(15.dp))
-                )
-            }
-        }
-        Text(
-            "Top Rated",
-            Modifier.padding(start = 15.dp, top = 10.dp),
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Black
-        )
-        LazyRow(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(10) {
-                MovieItem(
-                    null,
-                    Modifier
-                        .size(150.dp, 200.dp)
-                        .background(color = Color.White, RoundedCornerShape(15.dp))
+                        .background(color = Color.DarkGray, RoundedCornerShape(15.dp)).clickable { }
                 )
             }
         }
@@ -147,21 +212,81 @@ fun MainScreen(navController: NavController?, client: MovieClient?) {
             modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(10) {
+            items(upComingMovieList.value.take(5)) { movie ->
                 MovieItem(
-                    null,
+                    movie,
                     Modifier
                         .size(150.dp, 200.dp)
                         .background(color = Color.White, RoundedCornerShape(15.dp))
                 )
             }
+            item {
+                SeeMoreItem(
+                    Modifier
+                        .size(150.dp, 200.dp)
+                        .background(color = Color.DarkGray, RoundedCornerShape(15.dp)).clickable { }
+                )
+            }
         }
-
+        Text(
+            "Popular",
+            Modifier.padding(start = 15.dp, top = 10.dp),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(popularMovieList.value.take(5)) { movie ->
+                MovieItem(
+                    movie,
+                    Modifier
+                        .size(150.dp, 200.dp)
+                        .background(color = Color.White, RoundedCornerShape(15.dp))
+                )
+            }
+            item {
+                SeeMoreItem(
+                    Modifier
+                        .size(150.dp, 200.dp)
+                        .background(color = Color.DarkGray, RoundedCornerShape(15.dp)).clickable { }
+                )
+            }
+        }
+        Text(
+            "Top Rated",
+            Modifier.padding(start = 15.dp, top = 10.dp),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color.Black
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(topRatedMovieList.value.take(5)) { movie ->
+                MovieItem(
+                    movie,
+                    Modifier
+                        .size(150.dp, 200.dp)
+                        .background(color = Color.White, RoundedCornerShape(15.dp))
+                )
+            }
+            item {
+                SeeMoreItem(
+                    Modifier
+                        .size(150.dp, 200.dp)
+                        .background(color = Color.DarkGray, RoundedCornerShape(15.dp)).clickable { }
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun MovieItem(movie: NowPlayingResult?, modifier: Modifier) {
+fun MovieItem(movie: MovieDetail?, modifier: Modifier) {
     Column(
         modifier,
         verticalArrangement = Arrangement.Top
@@ -172,24 +297,7 @@ fun MovieItem(movie: NowPlayingResult?, modifier: Modifier) {
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-//                    painterResource(Res.drawable.app_icon), contentDescription = "",
                 loadingImage(movie, Modifier.fillMaxWidth().weight(1f))
-                /*  AsyncImage(
-                      model = ImageRequest.Builder(LocalPlatformContext.current)
-                          .data(
-                              "https://image.tmdb.org/t/p/original/${
-                                  movie?.posterPath?.substringAfter(
-                                      "/"
-                                  )
-                              }"
-                          )
-                          .crossfade(true)
-                          .build(),
-                      placeholder = painterResource(Res.drawable.app_icon),
-                      contentDescription = "",
-                      contentScale = ContentScale.FillBounds,
-                      modifier = Modifier.fillMaxWidth().weight(1f),
-                  )*/
 
                 movie?.title?.let {
                     Text(
@@ -208,35 +316,52 @@ fun MovieItem(movie: NowPlayingResult?, modifier: Modifier) {
 }
 
 @Composable
-fun loadingImage(movie: NowPlayingResult?, modifier: Modifier) {
-    val posterPath = movie?.posterPath
-    android.util.Log.d(
-        "ImageLoading",
-        "Movie: ${movie != null}, Poster Path: $posterPath"
-    )
+fun SeeMoreItem(modifier: Modifier) {
+    Column(
+        modifier,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Card(modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize().background(color = Color.LightGray),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "See More",
+                    Modifier.padding(top = 4.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
 
+        }
+    }
+}
+
+@Composable
+fun loadingImage(movie: MovieDetail?, modifier: Modifier) {
+    val posterPath = movie?.posterPath
     val imageUrl = if (posterPath?.startsWith("/") == true) {
         "https://image.tmdb.org/t/p/original${posterPath}"
     } else if (posterPath != null) {
         "https://image.tmdb.org/t/p/original/$posterPath"
     } else {
-        null // Handle null posterPath explicitly
+        null
     }
 
-    android.util.Log.d("ImageLoading", "Final Image URL: $imageUrl") // Log the final URL
-
-    if (imageUrl != null) { // Only load if URL is not null
+    if (imageUrl != null) {
         AsyncImage(
             model = ImageRequest.Builder(LocalPlatformContext.current)
-                .data(imageUrl) // Use the constructed URL
+                .data(imageUrl)
                 .crossfade(true)
-                // Add error handling (see step 3)
                 .build(),
             placeholder = painterResource(Res.drawable.app_icon),
             contentDescription = movie?.title ?: "Movie poster",
             contentScale = ContentScale.FillBounds,
             modifier = modifier,
-            // Add error handling (see step 3)
             onError = { error ->
                 android.util.Log.e(
                     "ImageLoading",
@@ -253,7 +378,7 @@ fun loadingImage(movie: NowPlayingResult?, modifier: Modifier) {
         Image(
             painter = painterResource(Res.drawable.app_icon),
             contentDescription = "No poster available",
-            contentScale = ContentScale.FillBounds, // Or another appropriate scale
+            contentScale = ContentScale.FillBounds,
             modifier = modifier
         )
     }

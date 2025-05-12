@@ -1,14 +1,14 @@
-package com.movieflix.app.models.playing
+package com.yi.movieflix.app.models.playing
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class NowPlaying(
-    val dates: Dates,
+data class MoviesResult(
+    @SerialName("dates")
+    val dates: Dates? = null,
     val page: Long,
-
-    val results: List<NowPlayingResult>,
+    val results: List<MovieDetail>,
     @SerialName("total_pages")
     val totalPages: Long,
     @SerialName("total_results")

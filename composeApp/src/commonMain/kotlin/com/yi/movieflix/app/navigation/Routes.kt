@@ -6,4 +6,5 @@ enum class Routes(name: String) {
     MAIN_SCREEN("main_screen"),
     SEE_MORE_SCREEN("see_more_screen"),
     MOVIE_DETAIL_SCREEN("movie_detail_screen"),
+    FAVORITES_SCREEN("favorites_screen"),
 }
