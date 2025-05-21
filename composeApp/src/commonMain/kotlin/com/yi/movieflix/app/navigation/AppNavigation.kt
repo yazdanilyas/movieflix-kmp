@@ -8,9 +8,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.movieflix.app.navigation.Routes
 import com.yi.movieflix.app.data.remote.MovieClient
-import com.yi.movieflix.app.ui.MovieDetailScreen
+import com.yi.movieflix.app.ui.detail.MovieDetailScreen
 import com.yi.movieflix.app.ui.favorites.FavoritesScreen
 import com.yi.movieflix.app.ui.main.MainScreen
+import com.yi.movieflix.app.ui.seemore.SeeMoreScreen
 import com.yi.movieflix.app.ui.splash.Splash
 
 
@@ -33,6 +34,9 @@ fun AppNavigationHost(navController: NavHostController, client: MovieClient) {
         }
         composable(route = Routes.FAVORITES_SCREEN.name) {
             FavoritesScreen(navController)
+        }
+        composable(route = Routes.SEE_MORE_SCREEN.name) {
+            SeeMoreScreen(navController)
         }
     }
 

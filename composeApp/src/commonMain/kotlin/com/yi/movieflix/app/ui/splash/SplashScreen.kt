@@ -8,10 +8,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ProgressIndicatorDefaults
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.movieflix.app.navigation.Routes
 import kotlinx.coroutines.delay
@@ -44,7 +46,6 @@ fun Splash(navController: NavHostController?) {
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
 
         Column(
             modifier = Modifier.fillMaxWidth().fillMaxHeight(0.6f),
@@ -68,20 +69,32 @@ fun Splash(navController: NavHostController?) {
 
             )
         }
+        Column(
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.4f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(
+                color = Color.Red,
+                strokeWidth = 4.dp,
+                modifier = Modifier.size(35.dp)
+            )
+            Spacer(Modifier.height(10.dp).fillMaxWidth())
+            Text(
+                text = "Developed by Yazdan Ilyas",
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                fontSize = TextUnit(value = 15f, type = TextUnitType.Sp),
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 5.dp)
 
-        ProgressIndicatorDefaults
-        Text(
-            text = "Developed by Yazdan Ilyas",
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Bold,
-            fontSize = TextUnit(value = 15f, type = TextUnitType.Sp),
-            color = Color.Gray,
-            modifier = Modifier.padding(bottom = Dp(10f))
-
-        )
-        LaunchedEffect(Unit) {
-            delay(1000)
-            navController?.navigate(Routes.MAIN_SCREEN.name)
+            )
+            LaunchedEffect(Unit) {
+                delay(1000)
+                navController?.navigate(Routes.MAIN_SCREEN.name)
+            }
         }
+
+
     }
 }

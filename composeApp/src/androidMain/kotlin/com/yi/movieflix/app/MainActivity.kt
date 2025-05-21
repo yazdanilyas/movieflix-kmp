@@ -4,13 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.movieflix.app.data.remote.createHttpClient
 import com.yi.movieflix.app.data.remote.MovieClient
 import com.yi.movieflix.app.navigation.AppNavigationHost
-import com.yi.movieflix.app.ui.main.MainScreen
+import com.yi.movieflix.app.ui.splash.Splash
 import io.ktor.client.engine.okhttp.OkHttp
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +26,6 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-//    Splash(null)
-    val scope = rememberCoroutineScope()
-    MainScreen(null, null)
+    Splash(null)
+//    MainScreen(null, null)
 }
